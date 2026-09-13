@@ -7,7 +7,6 @@ from services.reservation_service.src.core.logging import logger, request_id_con
 from services.reservation_service.src.services.queue_service import queue_service
 
 
-
 class KafkaConsumerWorker:
     def __init__(self):
         self.consumer: Optional[AIOKafkaConsumer] = None
@@ -105,7 +104,6 @@ class KafkaConsumerWorker:
         finally:
             request_id_context.reset(trace_token)
 
-
     async def stop(self):
         """Dừng Consumer worker một cách an toàn (graceful shutdown)."""
         self.is_running = False
@@ -125,4 +123,3 @@ class KafkaConsumerWorker:
 
 
 kafka_consumer_worker = KafkaConsumerWorker()
-

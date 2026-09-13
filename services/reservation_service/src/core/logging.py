@@ -14,6 +14,12 @@ class RequestIdFilter(logging.Filter):
 
 
 def setup_logging():
+    log_format = "%(asctime)s [%(levelname)s] [ReservationService] %(name)s: %(message)s"
+    logging.basicConfig(
+        level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+        format=log_format,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
     log_format = "%(asctime)s [%(levelname)s] [ReservationService] [trace_id=%(request_id)s] %(name)s: %(message)s"
     formatter = logging.Formatter(log_format)
 
@@ -30,3 +36,4 @@ def setup_logging():
 
 
 logger = logging.getLogger("reservation_service")
+

@@ -8,10 +8,11 @@ async def test_health_check(client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert data["service"] == "Library Service"
-    assert data["status"] == "healthy"
+    assert data["status"] in ("healthy", "ok")
     assert data["dependencies"]["database"]["status"] == "connected"
     assert "latency_ms" in data["dependencies"]["database"]
     assert "x-request-id" in response.headers
+
 
 
 

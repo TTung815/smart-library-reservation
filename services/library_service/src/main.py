@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from services.library_service.src.core.config import settings
+from services.library_service.src.core.logging import setup_logging, logger
 from services.library_service.src.core.logging import setup_logging, logger, request_id_context
 from services.library_service.src.kafka.producer import kafka_producer
 from services.library_service.src.api.health import router as health_router
@@ -30,11 +31,13 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Khởi động: Kết nối Kafka Producer
     logger.info(f"Starting {settings.APP_NAME} in '{settings.APP_ENV}' environment...")
     await kafka_producer.start()
 
     yield
 
+    # Dừng: Đóng kết nối Kafka Producer
     logger.info(f"Shutting down {settings.APP_NAME}...")
     await kafka_producer.stop()
 
@@ -58,12 +61,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Đăng ký routes (cả trực tiếp và theo prefix /api/v1 để tương thích Nginx)
 # Đăng ký routes
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(health_router)  # Cho phép gọi trực tiếp /health
 app.include_router(health_router)
 app.include_router(books_router, prefix="/api/v1")
+app.include_router(books_router)   # Cho phép gọi trực tiếp /books
 app.include_router(books_router)
 app.include_router(borrow_router, prefix="/api/v1")
+app.include_router(borrow_router)  # Cho phép gọi trực tiếp /borrow
 app.include_router(borrow_router)
 
 
@@ -74,3 +81,4 @@ async def root():
         "status": "running",
         "docs_url": "/docs",
     }
+

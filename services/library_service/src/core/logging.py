@@ -14,6 +14,13 @@ class RequestIdFilter(logging.Filter):
 
 
 def setup_logging():
+    log_format = "%(asctime)s [%(levelname)s] [LibraryService] %(name)s: %(message)s"
+    logging.basicConfig(
+        level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+        format=log_format,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    # Tắt log quá chi tiết của thư viện bên thứ 3 nếu không ở debug mode
     log_format = "%(asctime)s [%(levelname)s] [LibraryService] [trace_id=%(request_id)s] %(name)s: %(message)s"
     formatter = logging.Formatter(log_format)
 
@@ -32,3 +39,4 @@ def setup_logging():
 
 
 logger = logging.getLogger("library_service")
+

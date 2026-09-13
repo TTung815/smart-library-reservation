@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from services.reservation_service.src.core.config import settings
+from services.reservation_service.src.core.logging import setup_logging, logger
 from services.reservation_service.src.core.logging import setup_logging, logger, request_id_context
 from services.reservation_service.src.core.redis_client import redis_manager
 from services.reservation_service.src.services.queue_service import queue_service
@@ -31,6 +32,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Khởi động kết nối Redis và Kafka Consumer Worker
     logger.info(f"Starting {settings.APP_NAME} in '{settings.APP_ENV}' environment...")
     await redis_manager.connect()
     if redis_manager.client:
@@ -40,9 +42,11 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    # Đóng kết nối Kafka Consumer Worker và Redis
     logger.info(f"Shutting down {settings.APP_NAME}...")
     await kafka_consumer_worker.stop()
     await redis_manager.disconnect()
+
 
 
 app = FastAPI(
@@ -78,3 +82,4 @@ async def root():
         "status": "running",
         "docs_url": "/docs",
     }
+

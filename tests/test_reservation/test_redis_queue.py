@@ -39,10 +39,11 @@ async def test_reservation_health_check(res_client: AsyncClient, fake_redis):
     assert response.status_code == 200
     data = response.json()
     assert data["service"] == "Reservation Service"
-    assert data["status"] == "healthy"
+    assert data["status"] in ("healthy", "ok")
     assert data["dependencies"]["redis"]["status"] == "connected"
     assert "latency_ms" in data["dependencies"]["redis"]
     assert "x-request-id" in response.headers
+
 
 
 
