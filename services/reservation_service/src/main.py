@@ -5,6 +5,7 @@ from services.reservation_service.src.core.config import settings
 from services.reservation_service.src.core.logging import setup_logging, logger
 from services.reservation_service.src.core.redis_client import redis_manager
 from services.reservation_service.src.services.queue_service import queue_service
+from services.reservation_service.src.kafka.consumer import kafka_consumer_worker
 from services.reservation_service.src.api.health import router as health_router
 from services.reservation_service.src.api.reservations import router as reservations_router
 
@@ -14,17 +15,21 @@ setup_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Khởi động kết nối Redis
+    # Khởi động kết nối Redis và Kafka Consumer Worker
     logger.info(f"Starting {settings.APP_NAME} in '{settings.APP_ENV}' environment...")
     await redis_manager.connect()
     if redis_manager.client:
         queue_service.set_redis_client(redis_manager.client)
 
+    await kafka_consumer_worker.start()
+
     yield
 
-    # Đóng kết nối Redis
+    # Đóng kết nối Kafka Consumer Worker và Redis
     logger.info(f"Shutting down {settings.APP_NAME}...")
+    await kafka_consumer_worker.stop()
     await redis_manager.disconnect()
+
 
 
 app = FastAPI(
