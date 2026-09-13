@@ -89,3 +89,4 @@ async def test_health_check_redis_disconnected(res_client: AsyncClient):
     data = response.json()
     assert data["status"] == "degraded"
     assert data["dependencies"]["redis"]["status"] == "disconnected"
+

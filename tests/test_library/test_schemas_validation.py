@@ -55,3 +55,4 @@ async def test_root_endpoint(client: AsyncClient):
     data = response.json()
     assert data["service"] == "Library Service"
     assert data["status"] == "running"
+
