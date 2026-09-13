@@ -1,6 +1,6 @@
 # Smart Library – Asynchronous Book Reservation System
 
-[![CI Pipeline](https://github.com/actions/checkout/actions/workflows/ci.yml/badge.svg)](https://github.com)
+[![CI Pipeline](https://github.com/TTung815/smart-library-reservation/actions/workflows/ci.yml/badge.svg)](https://github.com/TTung815/smart-library-reservation/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)
@@ -324,3 +324,4 @@ smart-library-reservation/
     ├── test_reservation/        # Tests Redis Queue, Dynamic repositioning
     └── test_kafka/              # Tests Kafka Event Contract & Async pipeline
 ```
+

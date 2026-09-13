@@ -122,3 +122,4 @@ docker compose logs --tail 8 library-service reservation-service
 echo -e "\n${BOLD}${GREEN}====================================================================${NC}"
 echo -e "${BOLD}${GREEN}   DEMO HOÀN THÀNH XUẤT SẮC 100%! HỆ THỐNG SẴN SÀNG ĐỂ NỘP BÀI.     ${NC}"
 echo -e "${BOLD}${GREEN}====================================================================${NC}"
+
