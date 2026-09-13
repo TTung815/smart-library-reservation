@@ -3,8 +3,9 @@ import json
 from typing import Optional
 from aiokafka import AIOKafkaConsumer
 from services.reservation_service.src.core.config import settings
-from services.reservation_service.src.core.logging import logger
+from services.reservation_service.src.core.logging import logger, request_id_context
 from services.reservation_service.src.services.queue_service import queue_service
+
 
 
 class KafkaConsumerWorker:
@@ -65,38 +66,45 @@ class KafkaConsumerWorker:
     async def process_message(self, message_data: dict) -> bool:
         """
         Xử lý sự kiện nhận được từ Kafka:
+        - Thiết lập correlation ID từ event_id vào log context
         - Kiểm tra event_type
         - Trích xuất dữ liệu reservation_id, user_id, book_id
         - Thêm vào hàng đợi Redis và lưu trạng thái WAITING
         """
-        logger.info(f"[KafkaConsumer] Incoming event: {message_data}")
+        event_id = message_data.get("event_id", "-")
+        trace_token = request_id_context.set(event_id[:10] if event_id != "-" else "-")
+        try:
+            logger.info(f"[KafkaConsumer] Incoming event: {message_data}")
 
-        event_type = message_data.get("event_type")
-        if event_type != "BookReservationRequested":
-            logger.warning(f"Ignored unknown event_type: {event_type}")
-            return False
+            event_type = message_data.get("event_type")
+            if event_type != "BookReservationRequested":
+                logger.warning(f"Ignored unknown event_type: {event_type}")
+                return False
 
-        payload = message_data.get("data", {})
-        reservation_id = payload.get("reservation_id")
-        user_id = payload.get("user_id")
-        book_id = payload.get("book_id")
+            payload = message_data.get("data", {})
+            reservation_id = payload.get("reservation_id")
+            user_id = payload.get("user_id")
+            book_id = payload.get("book_id")
 
-        if not all([reservation_id, user_id, book_id]):
-            logger.error(f"Missing required fields in payload: {payload}")
-            return False
+            if not all([reservation_id, user_id, book_id]):
+                logger.error(f"Missing required fields in payload: {payload}")
+                return False
 
-        # Đưa vào hàng đợi Redis
-        reservation = await queue_service.add_reservation(
-            reservation_id=int(reservation_id),
-            user_id=int(user_id),
-            book_id=int(book_id),
-        )
+            # Đưa vào hàng đợi Redis
+            reservation = await queue_service.add_reservation(
+                reservation_id=int(reservation_id),
+                user_id=int(user_id),
+                book_id=int(book_id),
+            )
 
-        logger.info(
-            f"[KafkaConsumer] Successfully queued reservation {reservation.reservation_id} "
-            f"for book {reservation.book_id}. Queue position: {reservation.position}"
-        )
-        return True
+            logger.info(
+                f"[KafkaConsumer] Successfully queued reservation {reservation.reservation_id} "
+                f"for book {reservation.book_id}. Queue position: {reservation.position}"
+            )
+            return True
+        finally:
+            request_id_context.reset(trace_token)
+
 
     async def stop(self):
         """Dừng Consumer worker một cách an toàn (graceful shutdown)."""

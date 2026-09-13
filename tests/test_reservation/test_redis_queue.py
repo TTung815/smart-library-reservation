@@ -39,8 +39,11 @@ async def test_reservation_health_check(res_client: AsyncClient, fake_redis):
     assert response.status_code == 200
     data = response.json()
     assert data["service"] == "Reservation Service"
-    assert data["status"] == "ok"
-    assert data["dependencies"]["redis"] == "connected"
+    assert data["status"] == "healthy"
+    assert data["dependencies"]["redis"]["status"] == "connected"
+    assert "latency_ms" in data["dependencies"]["redis"]
+    assert "x-request-id" in response.headers
+
 
 
 @pytest.mark.asyncio

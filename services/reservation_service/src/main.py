@@ -1,8 +1,12 @@
+import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 from services.reservation_service.src.core.config import settings
-from services.reservation_service.src.core.logging import setup_logging, logger
+from services.reservation_service.src.core.logging import setup_logging, logger, request_id_context
 from services.reservation_service.src.core.redis_client import redis_manager
 from services.reservation_service.src.services.queue_service import queue_service
 from services.reservation_service.src.kafka.consumer import kafka_consumer_worker
@@ -13,9 +17,20 @@ from services.reservation_service.src.api.reservations import router as reservat
 setup_logging()
 
 
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        req_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:10]
+        token = request_id_context.set(req_id)
+        try:
+            response: Response = await call_next(request)
+            response.headers["X-Request-ID"] = req_id
+            return response
+        finally:
+            request_id_context.reset(token)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Khởi động kết nối Redis và Kafka Consumer Worker
     logger.info(f"Starting {settings.APP_NAME} in '{settings.APP_ENV}' environment...")
     await redis_manager.connect()
     if redis_manager.client:
@@ -25,11 +40,9 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Đóng kết nối Kafka Consumer Worker và Redis
     logger.info(f"Shutting down {settings.APP_NAME}...")
     await kafka_consumer_worker.stop()
     await redis_manager.disconnect()
-
 
 
 app = FastAPI(
@@ -38,6 +51,9 @@ app = FastAPI(
     description="Reservation Service handling async queues and fast status queries via Redis.",
     lifespan=lifespan,
 )
+
+# Middleware truy vết Correlation ID
+app.add_middleware(RequestIDMiddleware)
 
 # CORS
 app.add_middleware(
@@ -62,4 +78,3 @@ async def root():
         "status": "running",
         "docs_url": "/docs",
     }
-
