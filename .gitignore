@@ -66,3 +66,6 @@ coverage.xml
 *.swo
 *~
 
+# Local presentation & internal notes
+PRESENTATION_GUIDE.md
+
