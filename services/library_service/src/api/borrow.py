@@ -7,7 +7,20 @@ from services.library_service.src.services.library_service import library_servic
 router = APIRouter(tags=["Borrowing & Reservation"])
 
 
-@router.post("/borrow", response_model=BorrowResponse)
+@router.post(
+    "/borrow",
+    response_model=BorrowResponse,
+    responses={
+        200: {
+            "model": BorrowResponse,
+            "description": "Mượn sách thành công (Sách còn trong kho - Synchronous Flow)",
+        },
+        202: {
+            "model": BorrowResponse,
+            "description": "Đặt sách thành công (Sách hết hàng - Asynchronous Flow qua Kafka)",
+        },
+    },
+)
 async def borrow_book(
     payload: BorrowRequest,
     response: Response,

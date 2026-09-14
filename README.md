@@ -17,35 +17,7 @@
 
 Hệ thống bao gồm 6 containers độc lập được điều phối qua **Docker Compose**:
 
-```mermaid
-graph TD
-    Client["Client / Postman / Browser"]
-
-    subgraph Edge ["Edge Layer"]
-        Nginx["Nginx Reverse Proxy (Port 80)\n- Single Entrypoint & Routing\n- Health Monitoring"]
-    end
-
-    subgraph AppServices ["Application Services (FastAPI)"]
-        LibSvc["Library Service (Port 8001)\n- Books, Users, Borrowing\n- Pessimistic Row Lock\n- Kafka Producer"]
-        ResSvc["Reservation Service (Port 8002)\n- Kafka Consumer Worker\n- Redis FIFO Queue\n- In-Memory Status Cache"]
-    end
-
-    subgraph DataLayer ["Data & Event Broker Layer"]
-        Postgres[("PostgreSQL 16\n(Source of Truth)\nusers, books,\nborrowings, reservations")]
-        KafkaBroker[["Apache Kafka 3.7 (KRaft)\nTopic: book-reservations\nKey: book_id"]]
-        RedisCache[("Redis 7 (In-Memory)\n- FIFO List: book_queue:{id}\n- Status: reservation:{id}")]
-    end
-
-    Client -->|HTTP :80| Nginx
-    Nginx -->|/api/v1/books, /api/v1/borrow| LibSvc
-    Nginx -->|/api/v1/reservations| ResSvc
-
-    LibSvc -->|ACID Transactions| Postgres
-    LibSvc -->|Publish Event| KafkaBroker
-
-    KafkaBroker -->|Consume Event| ResSvc
-    ResSvc -->|Manage FIFO Queue| RedisCache
-```
+![Smart Library System Architecture](docs/architecture.png)
 
 ---
 
